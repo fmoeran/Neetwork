@@ -4,7 +4,6 @@
 #include "containers.hpp"
 #include <string>
 #include <iostream>
-#include <utility>
 #include <new>
 #include <immintrin.h>
 
@@ -14,14 +13,10 @@ namespace operators {
 #if defined(SIMD)
         __m256 aVec, bVec, resVec;
         int i = 0;
-        std::cout << ((size_t)a % 32)<< std::endl;
-        std::cout << ((size_t)b % 32)<< std::endl;
         for (; i + 8 < size; i += 8) {
-            std::cout << "x" << std::endl;
             aVec = _mm256_loadu_ps(a + i);
 
             bVec = _mm256_loadu_ps(b + i);
-            std::cout << "y" << std::endl;
             resVec = _mm256_add_ps(aVec, bVec);
             _mm256_storeu_ps(result + i, resVec);
 
@@ -68,6 +63,7 @@ namespace operators {
 
     void mul(float *a, float b, float *result, size_t size) {
 #if defined(SIMD)
+
         __m256 aVec, bVec, resVec;
         bVec = _mm256_set1_ps(b);
         int i = 0;
@@ -88,48 +84,53 @@ namespace operators {
 #endif
     }
 
-    void mul(const Vector &a, const Matrix &b, Vector &result) {
-        mul(b, a, result);
+    void vecMatMul(const Vector &a, const Matrix &b, Vector &result) {
+        vecMatMul(b, a, result);
     }
 
-    void mul(const Matrix &a, const Vector &b, Vector &result) {
+    void vecMatMul(const Matrix &a, const Vector &b, Vector &result) {
 #if defined(SIMD)
 
         __m256 aVec, bVec, prodVec;
 
         for (int row=0; row<a.rows; row++) {
             float* pta = a.data.get() + row * a.cols;
-            float* ptb = b.data.get() + row;
+            float* ptb = b.data.get();
 
-            int i = 0;
-            result[i] = 0;
-            for (; i + 8 < a.cols; i += 8) {
+            int col = 0;
+            result[row] = 0;
 
-                aVec = _mm256_loadu_ps(pta + i);
+            for (; col + 8 < a.cols; col += 8) {
 
+                aVec = _mm256_loadu_ps(pta + col);
 
-                bVec = _mm256_loadu_ps(ptb + i);
+                bVec = _mm256_loadu_ps(ptb + col);
 
 
                 prodVec = _mm256_mul_ps(aVec, bVec);
 
-                prodVec = _mm256_hadd_ps(prodVec, prodVec);
-                prodVec = _mm256_hadd_ps(prodVec, prodVec);
+                prodVec = _mm256_hadd_ps(prodVec, _mm256_setzero_ps());
+                prodVec = _mm256_hadd_ps(prodVec, _mm256_setzero_ps());
 
                 int x = _mm256_extract_epi32(prodVec, 0);
-                result[i] += *(float*) &x;
+                result[row] += *(float*) &x;
                 x = _mm256_extract_epi32(prodVec, 2);
-                result[i] += *(float*) &x;
+                result[row] += *(float*) &x;
             }
+            for (; col < a.cols; col++) {
+                result.data[row] += a.at(row, col) * b.data[col];
+            }
+
         }
+
 #else // SIMD
 
         //assert(a.cols == b.rows && a.rows == result.rows);
         std::memset(result.data.get(), 0, result.rows * sizeof(float));
 
-        for (int i = 0; i < a.rows; i++) {
-            for (int j = 0; j < b.rows; j++) {
-                result.data[i] += a.at(i, j) * b.data[j];
+        for (int row = 0; row < a.rows; row++) {
+            for (int col = 0; col < b.rows; col++) {
+                result.data[row] += a.at(row, col) * b.data[col];
             }
         }
 #endif
@@ -158,7 +159,6 @@ void Vector::operator+=(float scalar) {
 
 void Vector::operator+=(const Vector &vector) {
     assert(rows == vector.rows);
-    std::cout << "adding" << std::endl;
     operators::add(data.get(), vector.data.get(), data.get(), rows);
 }
 
@@ -220,12 +220,5 @@ std::ostream &operator<<(std::ostream &os, Matrix const &m) {
     return os;
 }
 
-/*
-int main() {
-    Vector a(1000000000);
-    Vector b(1000000000);
-    b += 400;
-    a += 200;
-    std::cout << "go" << std::endl;
-    a += b;
-}*/
+
+

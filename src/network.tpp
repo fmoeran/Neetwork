@@ -134,15 +134,11 @@ void Network<cost, activation>::feedForward(const std::vector<float>& inputs) {
     layers[0].activatedValues = inputs;
 
     for (int i=1; i < layers.size(); i++) {
-
-        operators::mul(layers[i-1].activatedValues, layers[i].weights, layers[i].values);
-        std::cout << i << std::endl;
-        std::cout << layers[i].values.rows << ' ' << layers[i].biases.rows  << std::endl;
-        std::cout << (size_t)layers[i].biases.data.get() % 32 << std::endl;
+        operators::vecMatMul(layers[i-1].activatedValues, layers[i].weights, layers[i].values);
         layers[i].values += layers[i].biases;
         layers[i].applyActivation();
-    }
 
+    }
 
 }
 

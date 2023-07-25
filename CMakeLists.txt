@@ -12,7 +12,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 file(GLOB SOURCE_FILES src/*.hpp src/*.cpp src/*.tpp)
 
-add_compile_definitions(SIMD)
+#add_compile_definitions(SIMD)
 add_compile_options(-mavx)
 
 add_executable(AI ${SOURCE_FILES})

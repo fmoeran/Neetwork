@@ -14,8 +14,9 @@ int main() {
     Data testData = getMnistTestData();
     std::cout << "Training" << std::endl;
 
-    net.train(trainingData, 2, 10, testData);
+    net.train(trainingData, 1000, 10, testData);
 
     return 0;
 }
+
 

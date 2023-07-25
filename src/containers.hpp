@@ -16,8 +16,8 @@ namespace operators
     void add(float* a, float b, float* result, size_t size);
     void mul(float* a, float b, float* result, size_t size);
 
-    void mul(const Matrix&a, const Vector& b, Vector& result);
-    void mul(const Vector& a, const Matrix& b, Vector& result);
+    void vecMatMul(const Matrix&a, const Vector& b, Vector& result);
+    void vecMatMul(const Vector& a, const Matrix& b, Vector& result);
     float dot(const Vector& a, const Vector& b);
 
 }
